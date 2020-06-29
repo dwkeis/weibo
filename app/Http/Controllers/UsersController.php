@@ -5,13 +5,14 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\User;
 use Auth;
+use Mail;
 
 class UsersController extends Controller
 {
     public function __construct()
     {
         $this->middleware('auth', [            
-            'except' => ['show', 'create', 'store', 'index']
+            'except' => ['show', 'create', 'store', 'index', 'confirmEmail']
         ]);
         $this->middleware('guest', [
             'only' => ['create']
@@ -48,9 +49,9 @@ class UsersController extends Controller
     		'password' => bcrypt($request->password),
     	]);
 
-        Auth::login($user);
-    	session()->flash('success','Welcome, you\'ll begin a new journey here' );
-    	return redirect()->route('users.show', [$user]);
+        $this->sendEmailConfirmationTo($user);
+        session()->flash('success', 'Plese check your email for the confirmation email we sent to you.');
+        return redirect('/');
     }
 
     public function edit(User $user)
@@ -85,5 +86,32 @@ class UsersController extends Controller
         $user->delete();
         session()->flash('success', 'User deleted');
         return back();
+    }
+
+    protected function sendEmailConfirmationTo($user)
+    {
+        $view = 'emails.confirm';
+        $data = compact('user');
+        $from = 'summer@example.com';
+        $name = 'Summer';
+        $to = $user->email;
+        $subject = "Thanks for register in Weibo App! Please check your email.";
+
+        Mail::send($view, $data, function ($message) use ($from, $name, $to, $subject) {
+            $message->from($from, $name)->to($to)->subject($subject);
+        });
+    }
+
+    public function confirmEmail($token)
+    {
+        $user = User::where('activation_token', $token)->firstOrFail();
+
+        $user->activated = true;
+        $user->activation_token = null;
+        $user->save();
+
+        Auth::login($user);
+        session()->flash('success', 'Account acitvated.');
+        return redirect()->route('users.show', [$user]);
     }
 }
