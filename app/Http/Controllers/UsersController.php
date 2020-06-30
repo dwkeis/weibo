@@ -117,4 +117,18 @@ class UsersController extends Controller
         session()->flash('success', 'Account acitvated.');
         return redirect()->route('users.show', [$user]);
     }
+
+    public function followings(User $user)
+    {
+        $users = $user->followings()->paginate(30);
+        $title = $user->name . '\'s Following';
+        return view('users.show_follow', compact('users', 'title'));
+    }
+
+    public function followers(User $user)
+    {
+        $users = $user->followers()->paginate(30);
+        $title = $user->name . '\'s Follower';
+        return view('users.show_follow', compact('users', 'title'));
+    }
 }
