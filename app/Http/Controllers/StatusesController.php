@@ -25,4 +25,12 @@ class StatusesController extends Controller
         session()->flash('success', 'Status posted.');
         return redirect()->back();
     }
+
+        public function destroy(Status $status)
+    {
+        $this->authorize('destroy', $status);
+        $status->delete();
+        session()->flash('success', 'weibo has been deleted.');
+        return redirect()->back();
+    }
 }
